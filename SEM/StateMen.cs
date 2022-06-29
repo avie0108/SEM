@@ -5,17 +5,11 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-/// <summary>
-/// fancy men from upstate texas commonwealth.
-/// </summary>
+// only used to start the expression
 public class StateMen<T>
 {
-	private List<INode> statements = new();
-
-	public StateMen<TRes> Select<TRes>(Expression<Func<T, TRes>> expression)
+	public StateMen<T, _TRes> Select<_TRes>(Expression<Func<T, _TRes>> expression)
 	{
-		if (statements.Any())
-			throw new InvalidOperationException("Select must be the first StateMen");
 		SelectNode res = new()
 		{
 			ToSelect = expression.Body switch
@@ -29,15 +23,23 @@ public class StateMen<T>
 			},
 			From = typeof(T).Name,
 		};
-		return new StateMen<TRes>()
+		return new StateMen<T, _TRes>()
 		{
 			statements = {
 				res
 			}
 		};
 	}
+}
 
-	public StateMen<T> Where(Expression<Func<T, bool>> expression)
+/// <summary>
+/// fancy men from upstate texas commonwealth.
+/// </summary>
+public class StateMen<T, TRes>
+{
+	public List<INode> statements = new();
+
+	public StateMen<T, TRes> Where(Expression<Func<T, bool>> expression)
 	{
 		if (!statements.Any())
 			throw new InvalidOperationException("Where can not be the first StateMen");
@@ -45,8 +47,8 @@ public class StateMen<T>
 
 		string clause = expression.Body.ToString()
 			.Replace(expression.Parameters[0].Name + ".", "")
-			.Replace("AndAlso", "&&")
-			.Replace("OrElse", "||");
+			.Replace("AndAlso", "AND")
+			.Replace("OrElse", "OR");
 
 		
 		statements.Add(new WhereNode {Clause = clause});
@@ -54,7 +56,7 @@ public class StateMen<T>
 		return this;
 	}
 
-	public StateMen<T> OrderBy<TRes>(Expression<Func<T, TRes>> expression, bool descending = false)
+	public StateMen<T, TRes> OrderBy<_TRes>(Expression<Func<TRes, _TRes>> expression, bool descending = false)
 	{
 		if (!statements.Any())
 			throw new InvalidOperationException("OrderBy cannot be the first StateMen");
@@ -75,7 +77,7 @@ public class StateMen<T>
 		return this;
 	}
 
-	public StateMen<T> GroupBy<TRes>(Expression<Func<T, TRes>> expression)
+	public StateMen<T, TRes> GroupBy<_TRes>(Expression<Func<TRes, _TRes>> expression)
 	{
 		if (!statements.Any())
 			throw new InvalidOperationException("OrderBy cannot be the first StateMen");
@@ -103,7 +105,7 @@ public class StateMen<T>
 
 		try {
 			Query.Add(statements.Where(x => x is WhereNode).Cast<WhereNode>().Aggregate((x, y) => new () {
-				Clause = x.Clause + " && " + y.Clause,
+				Clause = x.Clause + " AND " + y.Clause,
 			}).ToSql());
 		}
 		// if there are no Where StateMen it will throw this exception and we will just ignore it

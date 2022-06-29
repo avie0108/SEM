@@ -1,17 +1,29 @@
-﻿StateMen<X> x = new();
+﻿using System.Data.Common;
+using Microsoft.Data.Sqlite;
 
-Console.WriteLine(x.Select(a => new { a.a, a.b })
-		.Where(a => a.b >= 5)
-		.Where(a => a.a < 12)
+using static _Deserialize;
+
+using var db = new SqliteConnection(new SqliteConnectionStringBuilder()
+{
+	DataSource = "db.db"
+}.ConnectionString);
+
+db.Open();
+
+
+var x = new StateMen<X>()
+		.Select(a => new { a.a, a.HELLO})
+		.Where(a => a.b < 31)
+		.Where(a => a.a > 12)
 		.OrderBy(a => a.a, true)
-		.OrderBy(a => a.b)
-		.GroupBy(a => a.a)
-.ToSql());
+		.GroupBy(a => a.a);
+
+Deserialize(x, db);
 
 class X
 {
 	public int a;
 	public int b;
 
-	public int HELLO;
+	public string HELLO;
 }
